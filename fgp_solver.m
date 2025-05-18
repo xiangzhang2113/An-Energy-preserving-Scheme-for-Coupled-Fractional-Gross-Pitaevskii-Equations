@@ -1,3 +1,5 @@
+%%Solves the Coupled Fractional Gross-Pitaevskii Equations and outputs the numerical solutions `u` and `v`.
+
 function  [u_II,v_II] = fgp_solver(alpha_u,alpha_v,tau,h)
 
 % Initialize problem domain
