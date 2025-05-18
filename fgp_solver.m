@@ -1,15 +1,14 @@
 function  [u_II,v_II] = fgp_solver(alpha_u,alpha_v,tau,h)
 
-%% 初始化定解问题
+% Initialize problem domain
+a= -10; b= 10;        % Spatial domain [a, b]
+T=0.5;                % Final simulation time
+N=fix(T/tau);         % Number of time steps
+M=fix((b-a)/h);       % Number of spatial steps
+t=0:tau:T;            % Time vector
+x=a:h:b;              % Spatial grid
 
-a= -10;
-b= 10;
-T=0.5;                %   @T 时间求解区域（暂定）
-N=fix(T/tau);            %   @N t被分割的区间数
-M=fix((b-a)/h);              %   @M x被分割的区间数
-t=0:tau:T;          %   @t 时间向量
-x=a:h:b;            %   @x 空间向量
-
+% System parameters
 D=0.2;
 beta_11=1;
 beta_22=1;
@@ -17,14 +16,14 @@ beta_12=0.4;
 lambda=-0.3;
 V=(1/2*x(1:M).^2).';
 
-phi_1= 1/(sqrt(pi))*exp(-x.^2);     %  phi_1初值函数
-phi_2= 1/(sqrt(pi))*exp(-x.^2);     %  phi_2 初值函数
-
-u_temp=phi_1(1:M).';      %   定义u初值条件
-v_temp=phi_2(1:M).';      %   定义v初值条件
-
+% Initial conditions
+phi_1= 1/(sqrt(pi))*exp(-x.^2);   
+phi_2= 1/(sqrt(pi))*exp(-x.^2);   
+u_temp=phi_1(1:M).';       % Initial condition for u
+v_temp=phi_2(1:M).';        % Initial condition for v
 uv_temp=[u_temp;v_temp];
-% 创建拉普拉斯算子矩阵A
+
+% Construct spectral fractional Laplacian matrix A
 r=ones(1,M);
 for j=1:M
      r(j)=1/(2*M)*(abs(-M/2*(2*pi/(b-a))))^alpha_u*exp(1i*(-M/2*(2*pi/(b-a)))*((j-1)*h))+...
@@ -46,8 +45,7 @@ A_v=toeplitz(r);
 
 
 
-%构造第1层
-
+%First Time Step Calculation
 u_I=u_temp-1i*tau*(1/2*A_u*u_temp)-1i*tau*(V+ones(M,1).*D+beta_11*abs(u_temp).^2+beta_12*abs(v_temp).^2).*u_temp...
     -1i*tau*lambda*v_temp;
 v_I=v_temp-1i*tau*(1/2*A_v*v_temp)-1i*tau*(V+beta_12*abs(u_temp).^2+beta_22*abs(v_temp).^2).*v_temp...
@@ -55,7 +53,7 @@ v_I=v_temp-1i*tau*(1/2*A_v*v_temp)-1i*tau*(V+beta_12*abs(u_temp).^2+beta_22*abs(
 uv_I=[u_I;v_I]; 
 
 
-% 构造3层格式
+% Third Time Step Calculation
 I=ones(M,1)*(1i/(2*tau));
 for n=2:N
     a1=I-1/4*V-1/4*ones(M,1)*D-1/4*beta_11*abs(u_I).^2-beta_12/4*(abs(v_I).^2);
@@ -78,8 +76,6 @@ for n=2:N
     AB2=[A2,A4.*(1/2);A4.*(1/2),B2];
     AB3=[A3,A4.*(1/4);A4.*(1/4),B3];
     uv_II=AB1\( AB2*uv_I+AB3*uv_temp);
-  %  uv_II=[A1,A4.*(-1/4);A4.*(-1/4),B1]\([A2,A4.*(1/2);A4.*(1/2),B2]*uv_I+[A3,A4.*(1/4);A4.*(1/4),B3]*uv_temp);
- 
    
     uv_temp=uv_I;
     uv_I=uv_II;
