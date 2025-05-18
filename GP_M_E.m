@@ -1,3 +1,5 @@
+%%Computes the **mass**, **energy**, as well as **mass and energy errors** for the Coupled Fractional Gross-Pitaevskii Equations. This script is used to validate the conservation properties of the proposed numerical scheme.
+
 function  [M1,E,ErrM, ErrE] = GP_M_E(alpha_u,alpha_v,tau,h)
 % Initialize problem domain
 a= -10; b= 10;    % Spatial domain [a, b]
