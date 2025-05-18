@@ -1,3 +1,5 @@
+%%Computes the **mass and energy errors** for the Coupled Fractional Gross-Pitaevskii Equations under different numerical settings.
+
 function  [ErrM, ErrE] = GP_ErrM_ErrE(alpha_u,alpha_v,tau,h)
 % Initialize problem domain
 a= -10; b= 10;       % Spatial domain [a, b]     
