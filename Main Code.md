@@ -1,3 +1,4 @@
+%% Main script to reproduce all the figures and numerical results in the paper.
 %Table 1. Numerical errors and convergence orders in time with h = 0.01 at final time T = 0.5. 
 h = 1/100;  % Spatial step size
 tau = [1/40, 1/80, 1/160, 1/320, 1/640];  % Time step sizes
