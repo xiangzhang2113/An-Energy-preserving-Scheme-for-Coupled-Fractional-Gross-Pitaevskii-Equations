@@ -1,14 +1,13 @@
 function  [M1,E,ErrM, ErrE] = ouheGP_Richardson2(alpha_u,alpha_v,tau,h)
-%% 初始化定解问题
+% Initialize problem domain
+a= -10; b= 10;        % Spatial domain [a, b]
+T=0.5;                % Final simulation time
+N=fix(T/tau(1));      % Number of time steps
+M=fix((b-a)/h);       % Number of spatial steps
+t=0:tau:T;            % Time vector
+x=a:h:b;              % Spatial grid
 
-a= -10;
-b= 10;
-T=0.5;                %   @T 时间求解区域（暂定）
-N=fix(T/tau(1));            %   @N t被分割的区间数
-M=fix((b-a)/h);              %   @M x被分割的区间数
-t=0:tau:T;          %   @t 时间向量
-x=a:h:b;            %   @x 空间向量
-
+% System parameters
 D=0.2;
 beta_11=1;
 beta_22=1;
@@ -16,13 +15,14 @@ beta_12=0.4;
 lambda=-0.3;
 V=(1/2*x(1:end-1).^2).';
 
-phi_1= 1/(sqrt(pi))*exp(-x.^2);     %  phi_1初值函数
-phi_2= 1/(sqrt(pi))*exp(-x.^2);     %  phi_2 初值函数
+% Initial conditions
+phi_1= 1/(sqrt(pi))*exp(-x.^2); 
+phi_2= 1/(sqrt(pi))*exp(-x.^2); 
+u_temp_1=phi_1(1:M).';      % Initial condition for u
+v_temp_1=phi_2(1:M).';      % Initial condition for v
+u_temp_2=u_temp_1; v_temp_2=v_temp_1; % Combined state vector
 
-u_temp_1=phi_1(1:M).';      %   定义u初值条件
-v_temp_1=phi_2(1:M).';      %   定义v初值条件
-u_temp_2=u_temp_1; v_temp_2=v_temp_1;
-% 创建拉普拉斯算子矩阵A
+% Construct A (Fractional Laplacian)
 r=ones(1,M);
 for j=1:M
      r(j)=1/(2*M)*(abs(-M/2*(2*pi/(b-a))))^alpha_u*exp(1i*(-M/2*(2*pi/(b-a)))*((j-1)*h))+...
@@ -42,7 +42,7 @@ for j=1:M
 end
 A_v=toeplitz(r);
 
-% 创建算子矩阵D_1^alpha
+% Construct D1 (Fractional derivative operator)
 d=ones(1,M);
 for j=1:M
      d(j)=1/(2*M)*(abs(-M/2*(2*pi/(b-a))))^(alpha_u/2)*exp(1i*(-M/2*(2*pi/(b-a)))*((j-1)*h))+...
@@ -63,12 +63,13 @@ end
  
 D1_v=toeplitz(d);
 
-% 第0层质量
+% Compute mass at t = 0
 M1=zeros(1,N+1);
 M1(1)=h*(1/2*(abs(u_temp_1(1))^2+abs(v_temp_1(1))^2)+sum(abs(u_temp_1(2:M-1)).^2)+sum(abs(v_temp_1(2:M-1)).^2)+1/2*(abs(u_temp_1(M))^2+abs(v_temp_1(M))^2));
+% Compute mass conservation error at t = 0
 ErrM(1)=abs(M1(1)-M1(1));
 
-%第0层能量
+% Compute energy and conservation error at t = 0
 G=zeros(1,M);
 G=1/2*abs(D1_u*u_temp_1).^2+1/2*abs(D1_v*v_temp_1).^2+V.*(abs(u_temp_1).^2+abs(v_temp_1).^2)...
     +D.*abs(u_temp_1).^2+1/2*beta_11*abs(u_temp_1).^4+1/2*beta_22*abs(v_temp_1).^4+beta_12*(abs(u_temp_1).^2).*(abs(v_temp_1).^2)...
@@ -76,7 +77,6 @@ G=1/2*abs(D1_u*u_temp_1).^2+1/2*abs(D1_v*v_temp_1).^2+V.*(abs(u_temp_1).^2+abs(v
 E(1)=h*(1/2*G(1)+sum(G(2:M-1))+1/2*G(M));
 ErrE(1)=abs(E(1)-E(1));
 
-%构造第1层
 u_I_1=u_temp_1-1i*tau(1)*(1/2*A_u*u_temp_1)-1i*tau(1)*(V+ones(M,1).*D+beta_11*abs(u_temp_1).^2+beta_12*abs(v_temp_1).^2).*u_temp_1...
     -1i*tau(1)*lambda*v_temp_1;
 v_I_1=v_temp_1-1i*tau(1)*(1/2*A_v*v_temp_1)-1i*tau(1)*(V+beta_12*abs(u_temp_1).^2+beta_22*abs(v_temp_1).^2).*v_temp_1...
@@ -88,7 +88,6 @@ u_I_2=u_temp_2-1i*tau(2)*(1/2*A_u*u_temp_2)-1i*tau(2)*(V+ones(M,1).*D+beta_11*ab
 v_I_2=v_temp_2-1i*tau(2)*(1/2*A_v*v_temp_2)-1i*tau(2)*(V+beta_12*abs(u_temp_2).^2+beta_22*abs(v_temp_2).^2).*v_temp_2...
     -1i*tau(2)*lambda*u_temp_2;
 
-% 构造3层格式
 I_1=ones(M,1)*(1i/(2*tau(1)));
 I_2=ones(M,1)*(1i/(2*tau(2)));
 
@@ -116,10 +115,10 @@ I_2=ones(M,1)*(1i/(2*tau(2)));
 
      uv_E_I=4/3*uv_I_2-1/3*uv_I_1;
     
-    %第1层之后质量
+    % Mass and energy update
     M1(2)=h*(1/2*(abs(uv_E_I(1))^2+abs(uv_E_I(M+1))^2)+sum(abs(uv_E_I(2:M-1)).^2)+sum(abs(uv_E_I(M+2:2*M-1)).^2)+1/2*(abs(uv_E_I(M))^2+abs(uv_E_I(2*M))^2));
     ErrM(2)=abs(M1(2)-M1(1));
-    %第1层之后能量
+   
     G=1/2*abs(D1_u*uv_E_I(1:M)).^2+1/2*abs(D1_v*uv_E_I(M+1:2*M)).^2 ...
         +V.*(abs(uv_E_I(1:M)).^2+abs(uv_E_I(M+1:2*M)).^2)...
     +D.*abs(uv_E_I(1:M)).^2+1/2*beta_11*abs(uv_E_I(1:M)).^4+1/2*beta_22*abs(uv_E_I(M+1:2*M)).^4+beta_12*(abs(uv_E_I(1:M)).^2).*(abs(uv_E_I(M+1:2*M)).^2)...
@@ -176,10 +175,10 @@ for n=2:N
    end 
      uv_I_2=[u_I_2;v_I_2];   
      uv_E_I=4/3*uv_I_2-1/3*uv_I_1;
-    %第1层之后质量
+    
     M1(n+1)=h*(1/2*(abs(uv_E_I(1))^2+abs(uv_E_I(M+1))^2)+sum(abs(uv_E_I(2:M-1)).^2)+sum(abs(uv_E_I(M+2:2*M-1)).^2)+1/2*(abs(uv_E_I(M))^2+abs(uv_E_I(2*M))^2));
     ErrM(n+1)=abs(M1(n+1)-M1(1));
-    %第1层之后能量
+
     G=1/2*abs(D1_u*uv_E_I(1:M)).^2+1/2*abs(D1_v*uv_E_I(M+1:2*M)).^2 ...
         +V.*(abs(uv_E_I(1:M)).^2+abs(uv_E_I(M+1:2*M)).^2)...
     +D.*abs(uv_E_I(1:M)).^2+1/2*beta_11*abs(uv_E_I(1:M)).^4+1/2*beta_22*abs(uv_E_I(M+1:2*M)).^4+beta_12*(abs(uv_E_I(1:M)).^2).*(abs(uv_E_I(M+1:2*M)).^2)...
