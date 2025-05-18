@@ -1,3 +1,5 @@
+%%Applies a **high-order explicit Richardson extrapolation method** to improve accuracy, and computes the resulting **mass**, **energy**, and their **errors**.
+
 function  [M1,E,ErrM, ErrE] = ouheGP_Richardson2(alpha_u,alpha_v,tau,h)
 % Initialize problem domain
 a= -10; b= 10;        % Spatial domain [a, b]
