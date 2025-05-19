@@ -2,8 +2,8 @@ MATLAB code for the paper “An Energy-preserving Scheme for Coupled Fractional 
 
 ###  Code Overview
 
-- `main_code.m`  
-  Main script to reproduce all the figures and numerical results in the paper.
+- `Code_for_Tables_and_Figures.m`  
+  Main script to reproduce all tables in the paper.
 
 - `fgp_solver.m`  
   Solves the Coupled Fractional Gross-Pitaevskii Equations and outputs the numerical solutions `u` and `v`.  
